@@ -2,7 +2,8 @@ var arrSize = 200; //available printing space (in (mm^2)/2)
 var cubeSize = arrSize/2;//size of clay
 //initialize array with 0s
 var matrix = new Array(arrSize);
-starti = (arrSize - cubeSize/2);
+var starti = (arrSize - cubeSize/2);
+var finger-width = 5;
 function initialize(first = true){
 	for(i=0;i<arrSize;i++){
 		matrix[i] = new Array(arrSize);
@@ -58,7 +59,7 @@ function carve(fingers, finger_width){
 }
 
 //squish/manipulate the clay
-function shapeF(fingers, directions, finger_width, clay_type){
+/*function shapeF(fingers, directions, finger_width, clay_type){
 	if(clay_type == "soft"){depth = 10;} else {depth = 5;}
 	for(i=0; i<fingers.length; i++){
 		if(matrix[fingers[i][0]][fingers[i][1]][fingers[i][2]] == 1){
@@ -71,8 +72,8 @@ function shapeF(fingers, directions, finger_width, clay_type){
 			if depthcoord = x:
 				tmp = x
 				x = z
-				z = tmp				
-			*/
+				z = tmp			
+
 			old_matrix = matrix;
 			for(i=x-finger_width; i<x+finger_width; i++){
 				for(j=y-finger_width; j<y+finger_width; j++){
@@ -98,7 +99,7 @@ function shapeP(palms, directions, clay_type){
 				tmp = x
 				x = z
 				z = tmp				
-			*/
+			
 			old_matrix = matrix;
 			for(i=x-finger_width; i<x+finger_width; i++){
 				for(j=y-finger_width; j<y+finger_width; j++){
@@ -109,7 +110,7 @@ function shapeP(palms, directions, clay_type){
 			}
 		}
 	}
-}
+}*/
 
 //not sure if i need this
 /*function getHands(){
@@ -126,18 +127,17 @@ function shapeP(palms, directions, clay_type){
 
 //reset clay
 function reset(){
-	old_matrix = matrix;
+	//old_matrix = matrix;
 	initialize(false);	
 }
 
-function pressureFromSpeed(speed){
+/*function pressureFromSpeed(speed){
 	pressure = speed;
 	return pressure;
-}
+}*/
 
-function sculpt(){
-	//get finger and palm coords -> sculptFingers/sculptPalms
-	//func = carve/push/add based on settings
-	//finger-width (also based on settings)
+function sculpt(fingers){
+	finger-width = settings.getWidth();
+	carve(fingers, finger-width);
 	//s = setInterval(func(fingers,palms, finger_width, etc), 3000)
 }
