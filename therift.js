@@ -40,12 +40,6 @@ function getWidth(){
 
 }*/
 
-function Reset(){
-    //var Hardness = clay
-    var Motion = shape
-}
-
-
 
 //up
 //down

@@ -175,6 +175,8 @@
 			stats.domElement.style.top = '0px';
 			container.appendChild(stats.domElement);
 
+			controller.EnableGesture (Gesture.GestureType.TYPE_CIRCLE);
+
 			//
 
 			initialize(true);
@@ -199,7 +201,39 @@
 						// sculpt(fingerArray, palmArray)
 						console.log("Doing something now.");
 					}
+					for(Gesture gesture : frame.gestures()){
+						if(gesture.type() == Gesture.Type.TYPE_CIRCLE) {
+							CircleGesture circleGesture = new CircleGesture(gesture);
+
+							String clockwiseness;
+							if (circle.pointable().direction().angleTo(circle.normal()) <= Math.PI/2) {
+								clockwiseness = "clockwise";
+							}
+							else
+							{
+								clockwiseness = "counterclockwise";
+							}
+							zoomFactor = 5;
+							if(clockwiseness == "counterclockwise"){zoomFactor = zoomFactor * -1;}
+							switch (gesture.state()) {
+								case STATE_START:
+									camera.fov *= zoomFactor;
+									camera.updateProjectionMatrix()
+									break;
+								case STATE_UPDATE:
+									camera.fov *= zoomFactor;
+									camera.updateProjectionMatrix()
+									break;
+								case STATE_STOP:
+									break;
+								default:
+									break;
+							}
+
+						}
+					}
 				});
+
 
 			}
 
