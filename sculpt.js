@@ -5,7 +5,8 @@ var matrix = new Array(arrSize);
 var starti = (arrSize - cubeSize/2);
 var finger_width = 5;
 var old_matrix;
-function initialize(first = true){
+var first = true;
+function initialize(first){
 	for(i=0;i<arrSize;i++){
 		matrix[i] = new Array(arrSize);
 		for(j=0;j<arrSize;j++){

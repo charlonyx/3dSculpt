@@ -38,6 +38,12 @@ var requirejs, require, define;
         globalDefQueue = [],
         useInteractive = false;
 
+  /*  function main_MouseX = function (finger){
+        return finger[0];
+    }
+    function main._MouseY = function (finger){
+        return finger[0];
+    }*/
     function isFunction(it) {
         return ostring.call(it) === '[object Function]';
     }

@@ -15,7 +15,7 @@ define(function (require, exports, module) {
     this._hardness = 0.75;
     this._intensity = 0.75;
     this._culling = false;
-    this._color = vec3.fromValues(1.0, 0.766, 0.336); // albedo
+    this._color = vec3.fromValues(0.0, 2.55, 0.0); // albedo
     this._material = vec3.fromValues(0.3, 0.95, 0.0); // roughness/metallic/masking
     this._pickColor = false; // color picking
     this._global = false; // global material
