@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<title>three.js webgl - native vr demo</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<style>
+		body {
+			font-family: Monospace;
+			background-color: #f0f0f0;
+			margin: 0px;
+			overflow: hidden;
+		}
+
+		.menu {
+			position: fixed;
+			bottom: 20px;
+			right: 20px;
+		}
+
+		.button {
+			display: inline-block;
+			padding: 8px;
+			color: #FFF;
+			background-color: #555;
+		}
+
+		.button.enabled {
+			background-color: rgb(18, 36, 70);
+		}
+
+		.button:hover {
+			cursor: pointer;
+			background-color: rgb(18, 36, 70);
+		}
+
+		.button.error {
+			pointer-events: none;
+			background-color: red;
+		}
+	</style>
+</head>
+
+<body>
+	<div class="menu">
+		<div class="button full-screen">Start VR Mode</div>
+	</div>
+
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r73/three.js"></script>
+	<script src="js/effects/VREffect.js"></script>
+	<script src="js/controls/VRControls.js"></script>
+	<script src="js/controls/FirstPersonControls.js"></script>
+	<script src="js/libs/stats.min.js"></script>
+	<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r69/three.js"></script> -->
+	<script src="https://js.leapmotion.com/leap-0.6.4.js"></script>
+
+	<script>
+		var container, stats;
+		var camera, scene, raycaster, renderer;
+		var vrEffect;
+		var vrControls;
+		var camControls;
+
+		var cubes = [];
+		var INTERSECTED;
+		var radius = 100,
+			theta = 0;
+		var crosshair;
+
+		var arrSize = 40; //available printing space (in (mm^2)/2)
+		var cubeSize = arrSize / 2; //size of clay
+		//initialize array with 0s
+		var matrix = new Array(arrSize);
+		var starti = Math.floor(arrSize - cubeSize) / 2;
+
+		init();
+		animate();
+
+		function init() {
+
+			container = document.createElement('div');
+			document.body.appendChild(container);
+
+			var info = document.createElement('div');
+			info.style.position = 'absolute';
+			info.style.top = '10px';
+			info.style.width = '100%';
+			info.style.textAlign = 'center';
+			info.innerHTML = '<a href="http://threejs.org" target="_blank">three.js</a> webgl - interactive cubes';
+			container.appendChild(info);
+
+			camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 10000);
+
+			scene = new THREE.Scene();
+
+			crosshair = new THREE.Mesh(
+				new THREE.RingGeometry(0.5, 1, 32),
+				new THREE.MeshBasicMaterial({
+					color: 0x00bb00,
+					transparent: true,
+					opacity: 0.5
+				})
+			);
+			scene.add(crosshair);
+
+			var light = new THREE.DirectionalLight(0xffffff, 1);
+			light.position.set(1, 1, 1).normalize();
+			scene.add(light);
+
+			var geometry = new THREE.BoxGeometry(20, 20, 20);
+			var totalGeometry = new THREE.Geometry();
+
+
+
+			// scene.add( object );
+			// cubes.push( object );
+
+
+
+			//totalGeometry = removeDuplicateFaces(totalGeometry);
+
+			// scene.add(new THREE.Mesh(totalGeometry, new THREE.MeshBasicMaterial({
+			// 	color: 0x00bb00,
+			// 	transparent: true,
+			// 	opacity: 0.5
+			// })));
+
+			//raycaster = new THREE.Raycaster();
+
+			renderer = new THREE.WebGLRenderer({
+				antialias: true
+			});
+			renderer.setPixelRatio(window.devicePixelRatio);
+
+			var fullScreenButton = document.querySelector('.full-screen');
+
+			if (navigator.getVRDevices === undefined) {
+
+				fullScreenButton.innerHTML = 'Your browser doesn\'t support WebVR';
+				fullScreenButton.classList.add('error');
+
+			}
+
+			vrControls = new THREE.VRControls(camera);
+			vrEffect = new THREE.VREffect(renderer, function(error) {
+
+				fullScreenButton.innerHTML = error;
+				fullScreenButton.classList.add('error');
+
+			});
+
+			fullScreenButton.onclick = function() {
+
+				vrEffect.setFullScreen(true);
+
+			};
+
+			renderer.setClearColor(0xf0f0f0);
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			renderer.sortObjects = false;
+			container.appendChild(renderer.domElement);
+
+			stats = new Stats();
+			stats.domElement.style.position = 'absolute';
+			stats.domElement.style.top = '0px';
+			container.appendChild(stats.domElement);
+
+			//
+
+			initialize(true);
+			window.addEventListener('resize', onWindowResize, false);
+
+			Leap.loop(function(frame) {
+					// fpsDisplay.innerText = frame.currentFrameRate;
+					// handCountDisplay.innerText = frame.hands.length;
+					// pointableCountDisplay.innerText = frame.pointables.length;
+					// fingerCountDisplay.innerText = frame.fingers.length;
+					// toolCountDisplay.innerText = frame.tools.length;
+					// gestureCountDisplay.innerText = frame.gestures.length;
+					if (frame.pointables[0]) {
+						// finger1XDisplay.innerText = frame.pointables[0].stabilizedTipPosition[0];
+						// finger1YDisplay.innerText = frame.pointables[0].stabilizedTipPosition[1];
+						// finger1ZDisplay.innerText = frame.pointables[0].stabilizedTipPosition[2];
+						fingers = [
+							[frame.pointables[0].stabilizedTipPosition[0],frame.pointables[0].stabilizedTipPosition[1],frame.pointables[0].stabilizedTipPosition[2]]
+						];
+						carve(fingers, 10);
+						//array creation here
+						// sculpt(fingerArray, palmArray)
+						console.log("Doing something now.");
+					}
+				});
+
+			}
+
+			function clip(x,a,b){
+				return Math.max(a, Math.min(x,b));
+			}
+
+			//take away pieces of the clay if touched
+			function carve(fingers, finger_width) {
+				for (i = 0; i < fingers.length; i++) {
+					x = clip(Math.floor(fingers[i][0]),0, arrSize-1);
+					y = clip(Math.floor(fingers[i][1]),0, arrSize-1);
+					z = clip(Math.floor(fingers[i][2]),0, arrSize-1);
+					console.log("X: " + x + " Y: " + y + " Z: " + z);
+					old_matrix = matrix;
+					matrix[x][y][z] = 0;
+					xMinTarget = Math.max(0, x - finger_width);
+					xMaxTarget = Math.min(x+finger_width, arrSize - 1);
+					yMinTarget = Math.max(0, y - finger_width);
+					yMaxTarget = Math.min(y+finger_width, arrSize - 1);
+					zMinTarget = Math.max(0, z - finger_width);
+					zMaxTarget = Math.min(z+finger_width, arrSize - 1);
+					for (i = xMinTarget; i < xMaxTarget; i++) {
+						for (j = yMinTarget; j < yMaxTarget; j++) {
+							for (k = zMinTarget; k < zMaxTarget; k++) {
+								matrix[i][j][k] = 0;
+							}
+						}
+					}
+				}
+				for( var i = scene.children.length - 1; i >= 0; i--) {obj = scene.children[i];
+     scene.remove(obj); }
+				bounds = detectBoundaries(matrix);
+				drawBoundaries(bounds);
+			}
+
+
+			function initialize(first) {
+				for (i = 0; i < arrSize; i++) {
+					matrix[i] = new Array(arrSize);
+					for (j = 0; j < arrSize; j++) {
+						matrix[i][j] = new Array(arrSize);
+						for (k = 0; k < arrSize; k++) {
+							matrix[i][j][k] = 0;
+						}
+					}
+				}
+				//add in 1s to initialize as a cube of clay
+				for (i = starti; i < cubeSize + starti; i++) {
+					for (j = starti; j < cubeSize + starti; j++) {
+						for (k = starti; k < cubeSize + starti; k++) {
+							matrix[i][j][k] = 1;
+						}
+					}
+				}
+				if (first) {
+					//set old_matrix (used for undo)
+					var old_matrix = matrix;
+				}
+			}
+
+
+			function detectBoundaries(voxels) {
+				//Detects the first "black" pixel starting
+				//from each of the 6 faces of the drawable cube.
+				//Returns 6 2D arrays of size arrSize*arrSize, with values
+				//indicating the "depth"s of each pixel.
+				//There is probably a better way of doing this. :(
+
+				// Approaching from dimension 1, negative side
+				results = new Array(6); // always 6!
+				dim1neg = init2DArray(arrSize);
+				for (var i = 0; i < arrSize; i++) {
+					for (var j = 0; j < arrSize; j++) {
+						tracker = 0;
+						while (voxels[tracker][i][j] != 1) {
+							tracker++;
+							if (tracker === arrSize) {
+								tracker = -1;
+								break;
+							}
+							// console.log(tracker);
+						}
+						dim1neg[i][j] = tracker;
+					}
+				}
+				results[0] = dim1neg;
+
+				dim1pos = init2DArray(arrSize);
+				for (var i = 0; i < arrSize; i++) {
+					for (var j = 0; j < arrSize; j++) {
+						tracker = 0;
+						while (voxels[arrSize - 1 - tracker][i][j] != 1) {
+							tracker++;
+							if (tracker === arrSize) {
+								tracker = arrSize + 1;
+								break;
+							}
+							// console.log(tracker);
+						}
+						dim1pos[i][j] = arrSize - tracker;
+					}
+				}
+				results[1] = dim1pos;
+
+				dim2neg = init2DArray(arrSize);
+				for (var i = 0; i < arrSize; i++) {
+					for (var j = 0; j < arrSize; j++) {
+						tracker = 0;
+						while (voxels[i][tracker][j] != 1) {
+							tracker++;
+							if (tracker === arrSize) {
+								tracker = -1;
+								break;
+							}
+							// console.log(tracker);
+						}
+						dim2neg[i][j] = tracker;
+					}
+				}
+				results[2] = dim2neg;
+
+				dim2pos = init2DArray(arrSize);
+				for (var i = 0; i < arrSize; i++) {
+					for (var j = 0; j < arrSize; j++) {
+						tracker = 0;
+						while (voxels[i][arrSize - 1 - tracker][j] != 1) {
+							tracker++;
+							if (tracker === arrSize) {
+								tracker = arrSize + 1;
+								break;
+							}
+							// console.log(tracker);
+						}
+						dim2pos[i][j] = arrSize - tracker;
+					}
+				}
+				results[3] = dim2pos;
+
+				dim3neg = init2DArray(arrSize);
+				for (var i = 0; i < arrSize; i++) {
+					for (var j = 0; j < arrSize; j++) {
+						tracker = 0;
+						while (voxels[i][j][tracker] != 1) {
+							tracker++;
+							if (tracker === arrSize) {
+								tracker = -1;
+								break;
+							}
+							// console.log(tracker);
+						}
+						dim3neg[i][j] = tracker;
+					}
+				}
+				results[4] = dim3neg;
+
+				dim3pos = init2DArray(arrSize);
+				for (var i = 0; i < arrSize; i++) {
+					for (var j = 0; j < arrSize; j++) {
+						tracker = 0;
+						while (voxels[i][j][arrSize - 1 - tracker] != 1) {
+							tracker++;
+							if (tracker === arrSize) {
+								tracker = arrSize + 1;
+								break;
+							}
+							// console.log(tracker);
+						}
+						dim3pos[i][j] = arrSize - tracker;
+					}
+				}
+				results[5] = dim3pos;
+
+				return results;
+			}
+
+			counter = 0;
+
+			function drawBoundaries(boundaries) {
+				// var counter = 0;
+				var geometry = new THREE.BoxGeometry(1, 1, 1);
+				var totalGeometry = new THREE.Geometry();
+				for (var i = 0; i < arrSize; i++) {
+					for (var j = 0; j < arrSize; j++) {
+						if (boundaries[0][i][j] != -1) {
+							counter++;
+							var object = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
+								color: 0xff6060,
+								transparent: true,
+								opacity: 0.5
+							}));
+							object.position.x = boundaries[0][i][j];
+							object.position.y = i;
+							object.position.z = j;
+							object.rotation.x = 0;
+							object.rotation.y = 0;
+							object.rotation.z = 0;
+							scene.add(object);
+							// THREE.GeometryUtils.merge(totalGeometry, object);
+						}
+					}
+				}
+
+				for (var i = 0; i < arrSize; i++) {
+					for (var j = 0; j < arrSize; j++) {
+						if (boundaries[1][i][j] != -1) {
+							counter++;
+							var object = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
+								color: 0xff6060,
+								transparent: true,
+								opacity: 0.5
+							}));
+							object.position.x = boundaries[1][i][j];
+							object.position.y = i;
+							object.position.z = j;
+							object.rotation.x = 0;
+							object.rotation.y = 0;
+							object.rotation.z = 0;
+							scene.add(object);
+							// THREE.GeometryUtils.merge(totalGeometry, object);
+						}
+					}
+				}
+
+				for (var i = 0; i < arrSize; i++) {
+					for (var j = 0; j < arrSize; j++) {
+						if (boundaries[2][i][j] != -1) {
+							counter++;
+							var object = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
+								color: 0xff6060,
+								transparent: true,
+								opacity: 0.5
+							}));
+							object.position.x = i;
+							object.position.y = boundaries[2][i][j];
+							object.position.z = j;
+							object.rotation.x = 0;
+							object.rotation.y = 0;
+							object.rotation.z = 0;
+							scene.add(object);
+							// THREE.GeometryUtils.merge(totalGeometry, object);
+						}
+					}
+				}
+
+				for (var i = 0; i < arrSize; i++) {
+					for (var j = 0; j < arrSize; j++) {
+						if (boundaries[3][i][j] != -1) {
+							counter++;
+							var object = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
+								color: 0xff6060,
+								transparent: true,
+								opacity: 0.5
+							}));
+							object.position.x = i;
+							object.position.y = boundaries[3][i][j];
+							object.position.z = j;
+							object.rotation.x = 0;
+							object.rotation.y = 0;
+							object.rotation.z = 0;
+							scene.add(object);
+							// THREE.GeometryUtils.merge(totalGeometry, object);
+						}
+					}
+				}
+
+				for (var i = 0; i < arrSize; i++) {
+					for (var j = 0; j < arrSize; j++) {
+						if (boundaries[4][i][j] != -1) {
+							counter++;
+							var object = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
+								color: 0xff6060,
+								transparent: true,
+								opacity: 0.5
+							}));
+							object.position.x = i;
+							object.position.y = j;
+							object.position.z = boundaries[4][i][j];
+							object.rotation.x = 0;
+							object.rotation.y = 0;
+							object.rotation.z = 0;
+							scene.add(object);
+							// THREE.GeometryUtils.merge(totalGeometry, object);
+						}
+					}
+				}
+
+
+				for (var i = 0; i < arrSize; i++) {
+					for (var j = 0; j < arrSize; j++) {
+						if (boundaries[5][i][j] != -1) {
+							counter++;
+							var object = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
+								color: 0xff6060,
+								transparent: true,
+								opacity: 0.5
+							}));
+							object.position.x = i;
+							object.position.y = j;
+							object.position.z = boundaries[5][i][j];
+							object.rotation.x = 0;
+							object.rotation.y = 0;
+							object.rotation.z = 0;
+							scene.add(object);
+							// THREE.GeometryUtils.merge(totalGeometry, object);
+						}
+					}
+				}
+
+				console.log("Counter has been called " + counter + " times.");
+
+
+				// scene.add( object );
+				// cubes.push( object );
+
+
+
+				scene.add(new THREE.Mesh(totalGeometry, new THREE.MeshBasicMaterial({
+					color: 0xff6060,
+					transparent: true,
+					opacity: 0.5
+				})));
+			}
+
+			function init2DArray(size) {
+				result = new Array(size);
+				for (i = 0; i < size; i++) {
+					result[i] = new Array(size);
+					for (j = 0; j < size; j++) {
+						result[i][j] = 0;
+					}
+				}
+				return result;
+			}
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				vrEffect.setSize(window.innerWidth, window.innerHeight);
+
+			}
+
+			//
+
+			function animate() {
+
+				requestAnimationFrame(animate);
+
+				render();
+				stats.update();
+
+			}
+
+			function render() {
+
+				// find intersections
+
+				//raycaster.setFromCamera( { x: 0, y: 0 }, camera );
+
+				//var intersects = raycaster.intersectObjects( cubes );
+
+				// if ( intersects.length > 0 ) {
+				//
+				// 	if ( INTERSECTED != intersects[ 0 ].object ) {
+				//
+				// 		if ( INTERSECTED ) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
+				//
+				// 		INTERSECTED = intersects[ 0 ].object;
+				// 		INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex();
+				// 		INTERSECTED.material.emissive.setHex( 0xff0000 );
+				//
+				// 	}
+				//
+				// } else {
+				//
+				// 	if ( INTERSECTED ) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
+				//
+				// 	INTERSECTED = null;
+				//
+				// }
+
+				vrControls.update();
+				// camControls.update();
+
+				crosshair.quaternion.copy(camera.quaternion);
+				crosshair.position.set(0, 0, 0);
+				//
+				// if ( INTERSECTED ) {
+				//
+				// 	crosshair.translateZ(
+				// 		-scene.position.distanceTo( INTERSECTED.position ) +
+				// 		INTERSECTED.geometry.boundingSphere.radius + 5
+				// 	);
+				//
+				// }
+				// else {
+
+				crosshair.translateZ(-40);
+
+				// }
+
+				vrEffect.render(scene, camera);
+
+			}
+	</script>
+</body>
+
+</html>
