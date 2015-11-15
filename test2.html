@@ -1,0 +1,67 @@
+<html>
+<head>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r69/three.js"></script>
+  <script src="https://js.leapmotion.com/leap-0.6.4.js"></script>
+<!--  <script src="https://js.leapmotion.com/leap-plugins-0.1.6.1.js"></script>
+    <script src="https://js.leapmotion.com/leap.rigged-hand-0.1.3.min.js"></script>
+-->
+<!-- load sculpt.js here -->
+
+</head>
+<body>
+  <p>Framerate: <span id="leapFPS">FPS</span></p>
+  <p>Number of hands: <span id="handCount">Hands</span></p>
+  <p>Number of pointables: <span id="pointableCount">Pointables</span></p>
+  <p>Number of tools: <span id="toolCount">Tools</span></p>
+  <p>Number of fingers: <span id="fingerCount">Fingers</span></p>
+  <p>Number of gestures: <span id="gestureCount">Gestures</span></p>
+  <p>Finger1-X: <span id="finger1X">Gestures</span></p>
+  <p>Finger1-Y: <span id="finger1Y">Gestures</span></p>
+  <p>Finger1-Z: <span id="finger1Z">Gestures</span></p>
+
+
+  <script>
+  // var controller = new Leap.Controller({
+  //                          enableGestures: true,
+  //                          frameEventName: 'animationFrame'
+  //                          });
+  //
+  var fpsDisplay = document.getElementById('leapFPS');
+  var handCountDisplay = document.getElementById('handCount');
+  var pointableCountDisplay = document.getElementById('pointableCount');
+  var fingerCountDisplay = document.getElementById('fingerCount');
+  var toolCountDisplay = document.getElementById('toolCount');
+  var gestureCountDisplay = document.getElementById('gestureCount');
+  var finger1XDisplay = document.getElementById('finger1X');
+  var finger1YDisplay = document.getElementById('finger1Y');
+  var finger1ZDisplay = document.getElementById('finger1Z');
+
+  // controller.on('frame', function(frame){
+  //   fpsDisplay.innerText = frame.currentFrameRate;
+  //   handCountDisplay.innerText = frame.hands.length;
+  //   pointableCountDisplay.innerText = frame.pointables.length;
+  //   fingerCountDisplay.innerText = frame.fingers.length;
+  //   toolCountDisplay.innerText = frame.tools.length;
+  //   gestureCountDisplay.innerText = frame.gestures.length;
+  //
+  //   });
+  // controller.connect();
+  // Leap.loop({enableGestures:true}, function(frame){});
+  Leap.loop(function(frame){
+      fpsDisplay.innerText = frame.currentFrameRate;
+      handCountDisplay.innerText = frame.hands.length;
+      pointableCountDisplay.innerText = frame.pointables.length;
+      fingerCountDisplay.innerText = frame.fingers.length;
+      toolCountDisplay.innerText = frame.tools.length;
+      gestureCountDisplay.innerText = frame.gestures.length;
+      if(frame.pointables[0]){
+      finger1XDisplay.innerText = frame.pointables[0].stabilizedTipPosition[0];
+      finger1YDisplay.innerText = frame.pointables[0].stabilizedTipPosition[1];
+      finger1ZDisplay.innerText = frame.pointables[0].stabilizedTipPosition[2];
+      //array creation here
+      // sculpt(fingerArray, palmArray)
+    }
+    })
+  </script>
+</html>
