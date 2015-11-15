@@ -1,9 +1,10 @@
-var arrSize = 200; //available printing space (in (mm^2)/2)
+var arrSize = 100; //available printing space (in (mm^2)/2)
 var cubeSize = arrSize/2;//size of clay
 //initialize array with 0s
 var matrix = new Array(arrSize);
 var starti = (arrSize - cubeSize/2);
-var finger-width = 5;
+var finger_width = 5;
+var old_matrix;
 function initialize(first = true){
 	for(i=0;i<arrSize;i++){
 		matrix[i] = new Array(arrSize);
@@ -24,7 +25,7 @@ function initialize(first = true){
 	}	
 	if(first){
 		//set old_matrix (used for undo)
-		var old_matrix = matrix;
+		old_matrix = matrix;
 	}
 }
 
@@ -137,7 +138,9 @@ function reset(){
 }*/
 
 function sculpt(fingers){
-	finger-width = settings.getWidth();
-	carve(fingers, finger-width);
-	//s = setInterval(func(fingers,palms, finger_width, etc), 3000)
+	finger_width = settings.getWidth();
+	if(fingers.length != 0){
+		carve(fingers, finger_width);
+	}
+	render(matrix);
 }
