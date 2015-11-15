@@ -40,11 +40,19 @@
 			background-color: red;
 		}
 	</style>
+	<!--style for settings buttons:-->
+	<style>
+		.hidden{
+			display:none;
+		}
+	</style>
 </head>
 
 <body>
 	<div class="menu">
 		<div class="button full-screen">Start VR Mode</div>
+		<div class="button off" id="settings" onclick="onOff()">Settings</div>
+		<div id="reset" class="settings-button hidden button" onclick="reset()">Reset</div>
 	</div>
 
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r73/three.js"></script>
@@ -54,7 +62,8 @@
 	<script src="js/libs/stats.min.js"></script>
 	<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r69/three.js"></script> -->
 	<script src="https://js.leapmotion.com/leap-0.6.4.js"></script>
-
+	<script src="therift.js"></script>
+	<script src="https://code.jquery.com/jquery-1.10.2.js"></script>
 	<script>
 		var container, stats;
 		var camera, scene, raycaster, renderer;
