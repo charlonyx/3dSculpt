@@ -1,28 +1,31 @@
-var arrSize = 100; //available printing space (in mm^2)
+var arrSize = 200; //available printing space (in (mm^2)/2)
 var cubeSize = arrSize/2;//size of clay
 //initialize array with 0s
 var matrix = new Array(arrSize);
 starti = (arrSize - cubeSize/2);
-for(i=0;i<arrSize;i++){
-	matrix[i] = new Array(arrSize);
-	for(j=0;j<arrSize;j++){
-		matrix[i][j] = new Array(arrSize);
-		for(k=0;k<arrSize;k++){
-			matrix[i][j][k] = 0;
+function initialize(first = true){
+	for(i=0;i<arrSize;i++){
+		matrix[i] = new Array(arrSize);
+		for(j=0;j<arrSize;j++){
+			matrix[i][j] = new Array(arrSize);
+			for(k=0;k<arrSize;k++){
+				matrix[i][j][k] = 0;
+			}
 		}
+	}
+	//add in 1s to initialize as a cube of clay
+	for(i=starti; i<cubeSize+starti-1; i++){
+		for(j=starti; j<cubeSize+starti-1; j++){
+			for(k=starti; k<cubeSize+starti-1; k++){
+				matrix[i][j][k] = 1;
+			}
+		}
+	}	
+	if(first){
+		//set old_matrix (used for undo)
+		var old_matrix = matrix;
 	}
 }
-//add in 1s to initialize as a cube of clay
-for(i=starti; i<cubeSize+starti-1; i++){
-	for(j=starti; j<cubeSize+starti-1; j++){
-		for(k=starti; k<cubeSize+starti-1; k++){
-			matrix[i][j][k] = 1;
-		}
-	}
-}	
-
-//set old_matrix (used for undo)
-var old_matrix = matrix;
 
 //revert to previous position
 function undo(){
@@ -55,12 +58,56 @@ function carve(fingers, finger_width){
 }
 
 //squish/manipulate the clay
-function push(fingers, palms, finger_width){
+function shapeF(fingers, directions, finger_width, clay_type){
+	if(clay_type == "soft"){depth = 10;} else {depth = 5;}
 	for(i=0; i<fingers.length; i++){
-		matrix[[fingers[i][0]][fingers[i][1]][fingers[i][2]]] = 0;
+		if(matrix[fingers[i][0]][fingers[i][1]][fingers[i][2]] == 1){
+			//coordinates are based on direction of finger (direction of movement?)
+			x = fingers[i][0];
+			y = fingers[i][1];
+			z = fingers[i][2];
+			//figure out which coordinate to set as "depth"
+			/* something like:
+			if depthcoord = x:
+				tmp = x
+				x = z
+				z = tmp				
+			*/
+			old_matrix = matrix;
+			for(i=x-finger_width; i<x+finger_width; i++){
+				for(j=y-finger_width; j<y+finger_width; j++){
+					for(k=0; k<depth; k++){
+						matrix[i][j][k] = 0;
+					}
+				}
+			}
+		}
 	}
+}
+function shapeP(palms, directions, clay_type){
+	if(clay_type == "soft"){depth = 4;} else {depth = 2;}
 	for(i=0; i<palms.length; i++){
-		matrix[palms[i]] = 0;
+		if(matrix[palms[i][0]][palms[i][1]][palms[i][2]] == 1){
+			//coordinates are based on direction of finger (direction of movement?)
+			x = palms[i][0];
+			y = palms[i][1];
+			z = palms[i][2];
+						//figure out which coordinate to set as "depth"
+			/* something like:
+			if depthcoord = x:
+				tmp = x
+				x = z
+				z = tmp				
+			*/
+			old_matrix = matrix;
+			for(i=x-finger_width; i<x+finger_width; i++){
+				for(j=y-finger_width; j<y+finger_width; j++){
+					for(k=0; k<depth; k++){
+						matrix[i][j][k] = 0;
+					}
+				}
+			}
+		}
 	}
 }
 
@@ -76,6 +123,17 @@ function push(fingers, palms, finger_width){
 	}
 	return
 }*/
+
+//reset clay
+function reset(){
+	old_matrix = matrix;
+	initialize(false);	
+}
+
+function pressureFromSpeed(speed){
+	pressure = speed;
+	return pressure;
+}
 
 function sculpt(){
 	//get finger and palm coords -> sculptFingers/sculptPalms
